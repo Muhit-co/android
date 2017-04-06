@@ -6,5 +6,7 @@
 
     <color name="black_overlay">#66000000</color>
 
-    <color name="bar_color">#44A1E0</color>
+    <color name="muhitPrimary">#44A1E0</color>
+    <color name="muhitPrimaryShaded">#3E91CA</color>
+    <color name="muhitSecondary">#2D6A8D</color>
 </resources>

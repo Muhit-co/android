@@ -23,7 +23,7 @@ public class WebActivityTopbar extends AppCompatActivity {
         url = getString(R.string.web_url);
 
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-        builder.setToolbarColor(ContextCompat.getColor(getApplicationContext(), R.color.bar_color));
+        builder.setToolbarColor(ContextCompat.getColor(getApplicationContext(), R.color.muhitPrimary));
 
         CustomTabsIntent customTabsIntent = builder.build();
         customTabsIntent.launchUrl(this, Uri.parse(url));
