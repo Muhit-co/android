@@ -69,26 +69,36 @@ public class WebActivityFullscreen extends AppCompatActivity {
      * The domain of the website shown in the WebView
      */
     private String mAppWebDomain;
-    /**
-     * Flag to track whether the website was ever reached successfully
-     */
-    private boolean mEverLoadedSuccessfully = false;
 
-    /**
-     * Whether the first page request has been handled
-     */
-    private boolean mFirstLoadRequestProcessed = false;
+    private enum PageLoadingState {
+        Initial,
+        InProgress,
+        Failed,
+        Succeeded
+    }
+    private PageLoadingState mCurrentLoadingState = PageLoadingState.Initial;
+
     /**
      * A receiver that triggers an offline warning when internet is lost
      */
     private final NetworkReceiver mConnectivityReceiver = new NetworkReceiver(this) {
         @Override
         void onInternetAvailable() {
-            if (mEverLoadedSuccessfully) {
-                WebActivityFullscreen.this.hideOfflineWarning();
-            } else {
-                // If no successful load ever occurred yet, reload the webview now.
-                startFirstPageLoad();
+            switch (mCurrentLoadingState) {
+                case InProgress: {
+                    // Continue loading
+                    break;
+                }
+                case Initial:
+                case Failed: {
+                    // If no successful load ever occurred yet, reload the webview now.
+                    startFirstPageLoad();
+                    break;
+                }
+                case Succeeded: {
+                    WebActivityFullscreen.this.hideOfflineWarning();
+                    break;
+                }
             }
         }
 
@@ -129,9 +139,10 @@ public class WebActivityFullscreen extends AppCompatActivity {
         mOfflineWarningFadeLayover = findViewById(R.id.offline_warning_fade);
 
         // Configure the offline warning for regular/successful usage
-        mInitialOfflineLayoverAlpha = mOfflineWarningFadeLayover.getAlpha();
-        mOfflineWarningFadeLayover.setAlpha(1.0f); // Start with full opacity, it will be made transparent upon the first successful page load
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            mInitialOfflineLayoverAlpha = mOfflineWarningFadeLayover.getAlpha();
+            mOfflineWarningFadeLayover.setAlpha(1.0f); // Start with full opacity, it will be made transparent upon the first successful page load
+        }
         mOfflineWarningView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -156,7 +167,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
         cookieManager.setAcceptCookie(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, true);
+            CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, true);
         }
 
         CookieSyncManager.getInstance().sync();
@@ -204,8 +215,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
     }
 
     private void startFirstPageLoad() {
-        mEverLoadedSuccessfully = false;
-        mFirstLoadRequestProcessed = false;
+        mCurrentLoadingState = PageLoadingState.InProgress;
 
         mWebView.loadUrl(mAppUrl);
     }
@@ -301,10 +311,12 @@ public class WebActivityFullscreen extends AppCompatActivity {
             super.onReceivedError(view, errorCode, description, failingUrl);
 
             // If an error was received before an onPageFinished, then we assume that Muhit.co cannot be reached
-            if (!mFirstLoadRequestProcessed) {
-                mFirstLoadRequestProcessed = true;
+            if (mCurrentLoadingState != PageLoadingState.Succeeded) {
+                mCurrentLoadingState = PageLoadingState.Failed;
 
-                mOfflineWarningFadeLayover.setAlpha(1.0f);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    mOfflineWarningFadeLayover.setAlpha(1.0f);
+                }
                 showOfflineWarning();
             }
         }
@@ -313,13 +325,13 @@ public class WebActivityFullscreen extends AppCompatActivity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
 
-            if (!mFirstLoadRequestProcessed && mConnectivityReceiver.isConnected()) {
-                mFirstLoadRequestProcessed = true;
-
-                mEverLoadedSuccessfully = true;
+            if (mCurrentLoadingState == PageLoadingState.InProgress && mConnectivityReceiver.isConnected()) {
+                mCurrentLoadingState = PageLoadingState.Succeeded;
 
                 // The overlay can now become transparent
-                mOfflineWarningFadeLayover.setAlpha(mInitialOfflineLayoverAlpha);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    mOfflineWarningFadeLayover.setAlpha(mInitialOfflineLayoverAlpha);
+                }
 
                 hideOfflineWarning();
             }

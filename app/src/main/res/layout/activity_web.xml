@@ -8,6 +8,17 @@
     android:layout_height="match_parent"
     tools:context="co.muhit.WebActivityFullscreen">
 
+    <WebView
+        android:id="@+id/web_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+
+    </WebView>
+
     <RelativeLayout
         android:id="@+id/offline_warning_view"
         android:layout_width="match_parent"
@@ -55,6 +66,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/imageView"
                 android:layout_centerHorizontal="true"
+                android:gravity="center_horizontal"
                 android:layout_marginTop="20dp"
                 android:ems="10"
                 android:inputType="textMultiLine"
@@ -67,16 +79,5 @@
         </RelativeLayout>
 
     </RelativeLayout>
-
-    <WebView
-        android:id="@+id/web_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true">
-
-    </WebView>
 
 </RelativeLayout>
