@@ -1,14 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_web"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="co.muhit.wrapper.WebActivityFullscreen">
+    tools:context="co.muhit.WebActivityFullscreen">
+
+    <RelativeLayout
+        android:id="@+id/offline_warning_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_x="199dp"
+        android:layout_y="268dp"
+        android:elevation="5dp"
+        >
+
+        <RelativeLayout
+            android:id="@+id/offline_warning_fade"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.4"
+            android:background="@android:color/white">
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/offline_warning_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_margin="30dp"
+            android:background="@android:color/white">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_centerInParent="false"
+                android:layout_x="235dp"
+                android:layout_y="423dp"
+                android:elevation="10dp"
+                app:srcCompat="@drawable/splash_icon_512"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="0dp"/>
+
+            <TextView
+                android:id="@+id/editText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/imageView"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="20dp"
+                android:ems="10"
+                android:inputType="textMultiLine"
+                android:maxLines="5"
+                android:text="@string/offline_warning"
+                android:textAlignment="center"
+                android:textColor="@color/muhitSecondary"
+                android:textSize="24dp"/>
+
+        </RelativeLayout>
+
+    </RelativeLayout>
 
     <WebView
         android:id="@+id/web_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true">
+
+    </WebView>
+
 </RelativeLayout>

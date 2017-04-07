@@ -3,11 +3,14 @@ package co.muhit;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
@@ -30,46 +33,74 @@ public class WebActivityFullscreen extends AppCompatActivity {
      * A resultcode to identify file-choice intents
      */
     private static int FILECHOOSER_RESULTCODE = 6321;
-
-    /**
-     * The WebView that displays the website
-     */
-    private WebView mWebView;
-
-    /**
-     * The WebView that displays any window popups.
-     */
-    private WebView mWebViewPop;
-
-    /**
-     * The container layout that shows the WebView and any overlayed content
-     */
-    private RelativeLayout mContainer;
-
-    /**
-     * The URL to the website shown in the WebView
-     */
-    private String mAppUrl;
-
-    /**
-     * The domain of the website shown in the WebView
-     */
-    private String mAppWebDomain;
-
-    /**
-     * The language iso that the app is using
-     */
-    protected String mLanguageIso3;
-
     /**
      * File upload callback for platform versions prior to Android 5.0
      */
     protected ValueCallback<Uri> mFileUploadCallbackFirst;
-
     /**
      * File upload callback for Android 5.0+
      */
     protected ValueCallback<Uri[]> mFileUploadCallbackSecond;
+    /**
+     * The WebView that displays the website
+     */
+    private WebView mWebView;
+    /**
+     * The WebView that displays any window popups.
+     */
+    private WebView mWebViewPop;
+    /**
+     * The container layout that shows the WebView and any overlayed content
+     */
+    private RelativeLayout mContainer;
+    /**
+     * The view that blocks user input from reaching the WebView as long as the device is offline
+     */
+    private View mOfflineWarningView;
+    /**
+     * The view that entirely covers the WebView to make it faded
+     */
+    private View mOfflineWarningFadeLayover;
+    /**
+     * The URL to the website shown in the WebView
+     */
+    private String mAppUrl;
+    /**
+     * The domain of the website shown in the WebView
+     */
+    private String mAppWebDomain;
+    /**
+     * Flag to track whether the website was ever reached successfully
+     */
+    private boolean mEverLoadedSuccessfully = false;
+
+    /**
+     * Whether the first page request has been handled
+     */
+    private boolean mFirstLoadRequestProcessed = false;
+    /**
+     * A receiver that triggers an offline warning when internet is lost
+     */
+    private final NetworkReceiver mConnectivityReceiver = new NetworkReceiver(this) {
+        @Override
+        void onInternetAvailable() {
+            if (mEverLoadedSuccessfully) {
+                WebActivityFullscreen.this.hideOfflineWarning();
+            } else {
+                // If no successful load ever occurred yet, reload the webview now.
+                startFirstPageLoad();
+            }
+        }
+
+        @Override
+        void onDisconnected() {
+            WebActivityFullscreen.this.showOfflineWarning();
+        }
+    };
+    /**
+     * The alpha of the offline warning. It's value will be take from the initial layout value.
+     */
+    private float mInitialOfflineLayoverAlpha;
 
     public void onBackPressed() {
         // Forward BACK presses to the WebView as long as there is navigation history
@@ -94,12 +125,31 @@ public class WebActivityFullscreen extends AppCompatActivity {
         setContentView(R.layout.activity_web);
         mContainer = (RelativeLayout) findViewById(R.id.activity_web);
         mWebView = (WebView) findViewById(R.id.web_view);
+        mOfflineWarningView = findViewById(R.id.offline_warning_view);
+        mOfflineWarningFadeLayover = findViewById(R.id.offline_warning_fade);
+
+        // Configure the offline warning for regular/successful usage
+        mInitialOfflineLayoverAlpha = mOfflineWarningFadeLayover.getAlpha();
+        mOfflineWarningFadeLayover.setAlpha(1.0f); // Start with full opacity, it will be made transparent upon the first successful page load
+
+        mOfflineWarningView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // True to indicate that the event was handled by the view/listener
+                return true;
+            }
+        });
+
+        // Listen for changes in connectivity
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+
+        getApplicationContext().registerReceiver(mConnectivityReceiver, intentFilter);
 
         // Configure the webview and cookie management
         mWebView.setWebViewClient(new DomainSpecificWebViewClient());
         mWebView.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
         mWebView.setWebChromeClient(new DomainSpecificChromeClient());
-        mWebView.loadUrl(mAppUrl);
 
         //Cookie manager for the webview
         CookieManager cookieManager = CookieManager.getInstance();
@@ -118,6 +168,11 @@ public class WebActivityFullscreen extends AppCompatActivity {
         webSettings.setAppCacheEnabled(true);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
         webSettings.setSupportMultipleWindows(true);
+
+        if (mConnectivityReceiver.isConnected()) {
+            hideOfflineWarning();
+            startFirstPageLoad();
+        }
     }
 
     @Override
@@ -135,27 +190,24 @@ public class WebActivityFullscreen extends AppCompatActivity {
     }
 
     /**
-     * Extension of WebViewClient that only allows the website's domain and facebook requests to be handled by the app's WebView.
+     * Start displaying the warning that the website cannot be reached
      */
-    private class DomainSpecificWebViewClient extends WebViewClient {
+    private void showOfflineWarning() {
+        mOfflineWarningView.setVisibility(View.VISIBLE);
+    }
 
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                String host = request.getUrl().getHost();
-                return handleRequest(host, request.getUrl());
-            } else {
-                return super.shouldOverrideUrlLoading(view, request);
-            }
-        }
+    /**
+     * Stop displaying the warning that the website cannot be reached and make the webview available again
+     */
+    private void hideOfflineWarning() {
+        mOfflineWarningView.setVisibility(View.GONE);
+    }
 
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            Uri uri = Uri.parse(url);
-            String host = uri.getHost();
+    private void startFirstPageLoad() {
+        mEverLoadedSuccessfully = false;
+        mFirstLoadRequestProcessed = false;
 
-            return handleRequest(host, uri);
-        }
+        mWebView.loadUrl(mAppUrl);
     }
 
     /**
@@ -187,6 +239,91 @@ public class WebActivityFullscreen extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_VIEW, uri);
         startActivity(intent);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        if (requestCode == FILECHOOSER_RESULTCODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                if (intent != null) {
+                    if (mFileUploadCallbackFirst != null) {
+                        mFileUploadCallbackFirst.onReceiveValue(intent.getData());
+                        mFileUploadCallbackFirst = null;
+                    } else if (mFileUploadCallbackSecond != null) {
+                        Uri[] dataUris;
+                        try {
+                            dataUris = new Uri[]{Uri.parse(intent.getDataString())};
+                        } catch (Exception e) {
+                            dataUris = null;
+                        }
+
+                        mFileUploadCallbackSecond.onReceiveValue(dataUris);
+                        mFileUploadCallbackSecond = null;
+                    }
+                }
+            } else {
+                if (mFileUploadCallbackFirst != null) {
+                    mFileUploadCallbackFirst.onReceiveValue(null);
+                    mFileUploadCallbackFirst = null;
+                } else if (mFileUploadCallbackSecond != null) {
+                    mFileUploadCallbackSecond.onReceiveValue(null);
+                    mFileUploadCallbackSecond = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Extension of WebViewClient that only allows the website's domain and facebook requests to be handled by the app's WebView.
+     */
+    private class DomainSpecificWebViewClient extends WebViewClient {
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                String host = request.getUrl().getHost();
+                return handleRequest(host, request.getUrl());
+            } else {
+                return super.shouldOverrideUrlLoading(view, request);
+            }
+        }
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            Uri uri = Uri.parse(url);
+            String host = uri.getHost();
+
+            return handleRequest(host, uri);
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+            super.onReceivedError(view, errorCode, description, failingUrl);
+
+            // If an error was received before an onPageFinished, then we assume that Muhit.co cannot be reached
+            if (!mFirstLoadRequestProcessed) {
+                mFirstLoadRequestProcessed = true;
+
+                mOfflineWarningFadeLayover.setAlpha(1.0f);
+                showOfflineWarning();
+            }
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+
+            if (!mFirstLoadRequestProcessed && mConnectivityReceiver.isConnected()) {
+                mFirstLoadRequestProcessed = true;
+
+                mEverLoadedSuccessfully = true;
+
+                // The overlay can now become transparent
+                mOfflineWarningFadeLayover.setAlpha(mInitialOfflineLayoverAlpha);
+
+                hideOfflineWarning();
+            }
+        }
     }
 
     /**
@@ -262,38 +399,6 @@ public class WebActivityFullscreen extends AppCompatActivity {
             i.setType("*/*");
 
             startActivityForResult(Intent.createChooser(i, getString(R.string.upload_images_msg)), FILECHOOSER_RESULTCODE);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (requestCode == FILECHOOSER_RESULTCODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                if (intent != null) {
-                    if (mFileUploadCallbackFirst != null) {
-                        mFileUploadCallbackFirst.onReceiveValue(intent.getData());
-                        mFileUploadCallbackFirst = null;
-                    } else if (mFileUploadCallbackSecond != null) {
-                        Uri[] dataUris;
-                        try {
-                            dataUris = new Uri[]{Uri.parse(intent.getDataString())};
-                        } catch (Exception e) {
-                            dataUris = null;
-                        }
-
-                        mFileUploadCallbackSecond.onReceiveValue(dataUris);
-                        mFileUploadCallbackSecond = null;
-                    }
-                }
-            } else {
-                if (mFileUploadCallbackFirst != null) {
-                    mFileUploadCallbackFirst.onReceiveValue(null);
-                    mFileUploadCallbackFirst = null;
-                } else if (mFileUploadCallbackSecond != null) {
-                    mFileUploadCallbackSecond.onReceiveValue(null);
-                    mFileUploadCallbackSecond = null;
-                }
-            }
         }
     }
 }

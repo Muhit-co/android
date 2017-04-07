@@ -4,4 +4,5 @@
     <string name="web_url">http://muhit.co/</string>
     <string name="web_prefix">muhit.co</string>
     <string name="upload_images_msg">Select Images</string>
+    <string name="offline_warning">Muhit.co cannot be reached.\nPlease check your internet connection.</string>
 </resources>
