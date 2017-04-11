@@ -1,6 +1,7 @@
 package co.muhit;
 
 import android.app.Application;
+import android.os.Build;
 import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -24,7 +25,10 @@ public class MuhitApplication extends Application {
         // this method also only fires once
         // but the application has a context at this point
 
-        CookieManager.setAcceptFileSchemeCookies(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+            CookieManager.setAcceptFileSchemeCookies(true);
+        }
+
         CookieSyncManager.createInstance(getApplicationContext());
         Log.d("MuhitApplication", "CookieSyncManager created");
     }
