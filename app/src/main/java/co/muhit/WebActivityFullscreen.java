@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -21,8 +22,10 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 /**
  * This Activity shows the website in a WebView.
@@ -36,11 +39,11 @@ public class WebActivityFullscreen extends AppCompatActivity {
     /**
      * File upload callback for platform versions prior to Android 5.0
      */
-    protected ValueCallback<Uri> mFileUploadCallbackFirst;
+    private ValueCallback<Uri> mFileUploadCallbackFirst;
     /**
      * File upload callback for Android 5.0+
      */
-    protected ValueCallback<Uri[]> mFileUploadCallbackSecond;
+    private ValueCallback<Uri[]> mFileUploadCallbackSecond;
     /**
      * The WebView that displays the website
      */
@@ -49,6 +52,11 @@ public class WebActivityFullscreen extends AppCompatActivity {
      * The WebView that displays any window popups.
      */
     private WebView mWebViewPop;
+
+    /**
+     * The button to press for retrying an internet connection
+     */
+    private Button mRetryButton;
     /**
      * The container layout that shows the WebView and any overlayed content
      */
@@ -84,22 +92,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
     private final NetworkReceiver mConnectivityReceiver = new NetworkReceiver(this) {
         @Override
         void onInternetAvailable() {
-            switch (mCurrentLoadingState) {
-                case InProgress: {
-                    // Continue loading
-                    break;
-                }
-                case Initial:
-                case Failed: {
-                    // If no successful load ever occurred yet, reload the webview now.
-                    startFirstPageLoad();
-                    break;
-                }
-                case Succeeded: {
-                    WebActivityFullscreen.this.hideOfflineWarning();
-                    break;
-                }
-            }
+            // Do nothing, wait for manual retry request
         }
 
         @Override
@@ -107,8 +100,31 @@ public class WebActivityFullscreen extends AppCompatActivity {
             WebActivityFullscreen.this.showOfflineWarning();
         }
     };
+
     /**
-     * The alpha of the offline warning. It's value will be take from the initial layout value.
+     * Method to update the view when the app is online again
+     */
+    private void continueOnline() {
+        switch (mCurrentLoadingState) {
+            case InProgress: {
+                // Continue loading
+                break;
+            }
+            case Initial:
+            case Failed: {
+                // If no successful load ever occurred yet, reload the webview now.
+                startFirstPageLoad();
+                break;
+            }
+            case Succeeded: {
+                WebActivityFullscreen.this.hideOfflineWarning();
+                break;
+            }
+        }
+    }
+
+    /**
+     * The alpha of the offline warning. It's value will be taken from the initial layout value.
      */
     private float mInitialOfflineLayoverAlpha;
 
@@ -137,12 +153,14 @@ public class WebActivityFullscreen extends AppCompatActivity {
         mWebView = (WebView) findViewById(R.id.web_view);
         mOfflineWarningView = findViewById(R.id.offline_warning_view);
         mOfflineWarningFadeLayover = findViewById(R.id.offline_warning_fade);
+        mRetryButton = (Button) findViewById(R.id.retryButton);
 
-        // Configure the offline warning for regular/successful usage
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             mInitialOfflineLayoverAlpha = mOfflineWarningFadeLayover.getAlpha();
-            mOfflineWarningFadeLayover.setAlpha(1.0f); // Start with full opacity, it will be made transparent upon the first successful page load
         }
+
+        configureOpaque();
+
         mOfflineWarningView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -184,6 +202,33 @@ public class WebActivityFullscreen extends AppCompatActivity {
             hideOfflineWarning();
             startFirstPageLoad();
         }
+
+        mRetryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mConnectivityReceiver.isConnected()) {
+                    continueOnline();
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.retry_still_offline, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    private void configureTransparent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            mOfflineWarningFadeLayover.setAlpha(mInitialOfflineLayoverAlpha);
+        }
+
+        mOfflineWarningFadeLayover.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.muhitOfflineTransparent));
+    }
+
+    private void configureOpaque() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            mOfflineWarningFadeLayover.setAlpha(1.0f);
+        }
+
+        mOfflineWarningFadeLayover.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.muhitOfflineOpaque));
     }
 
     @Override
@@ -223,8 +268,8 @@ public class WebActivityFullscreen extends AppCompatActivity {
     /**
      * Handle loading of new URLs. When a target should be handled externally this function launches an Intent to do so
      *
-     * @param host
-     * @param uri
+     * @param host The host of which the request is to be handeled
+     * @param uri The target URI to load
      * @return Whether a target should be loaded into this app's WebView (true) or externally (false)
      */
     private boolean handleRequest(String host, Uri uri) {
@@ -314,9 +359,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
             if (mCurrentLoadingState != PageLoadingState.Succeeded) {
                 mCurrentLoadingState = PageLoadingState.Failed;
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    mOfflineWarningFadeLayover.setAlpha(1.0f);
-                }
+                configureOpaque();
                 showOfflineWarning();
             }
         }
@@ -329,10 +372,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
                 mCurrentLoadingState = PageLoadingState.Succeeded;
 
                 // The overlay can now become transparent
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    mOfflineWarningFadeLayover.setAlpha(mInitialOfflineLayoverAlpha);
-                }
-
+                configureTransparent();
                 hideOfflineWarning();
             }
         }

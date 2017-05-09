@@ -9,4 +9,8 @@
         <attr name="metaButtonBarButtonStyle" format="reference"/>
     </declare-styleable>
 
+    <declare-styleable name="CustomFontTextView">
+        <attr name="font" format="string"/>
+        <attr name="textStyle" format="integer"/>
+    </declare-styleable>
 </resources>

@@ -37,7 +37,7 @@ public abstract class NetworkReceiver extends BroadcastReceiver {
     /**
      * Determines whether there is a network connection available
      *
-     * @return
+     * @return Whether the device is connected to the internet
      */
     public boolean isConnected() {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

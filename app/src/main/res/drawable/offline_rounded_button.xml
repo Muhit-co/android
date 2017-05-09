@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+android:shape="rectangle" android:padding="40dp">
+ <solid android:color="@color/muhitRetryButton"/>
+    <corners
+		android:bottomRightRadius="12dp"
+     	android:bottomLeftRadius="12dp"
+	  	android:topLeftRadius="12dp"
+	  	android:topRightRadius="12dp"/>
+    <stroke android:width="0dp" android:color="@android:color/transparent" />
+</shape>

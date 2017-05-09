@@ -9,4 +9,8 @@
     <color name="muhitPrimary">#44A1E0</color>
     <color name="muhitPrimaryShaded">#3E91CA</color>
     <color name="muhitSecondary">#2D6A8D</color>
+
+    <color name="muhitOfflineOpaque">#235673</color>
+    <color name="muhitOfflineTransparent">#245672</color>
+    <color name="muhitRetryButton">#499FD8</color>
 </resources>

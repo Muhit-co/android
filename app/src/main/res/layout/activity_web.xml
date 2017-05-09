@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:fancy="http://schemas.android.com/apk/res-auto"
     android:id="@+id/activity_web"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -25,8 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentRight="true"
-        android:layout_x="199dp"
-        android:layout_y="268dp"
+        android:layout_alignParentEnd="true"
         android:elevation="5dp"
         >
 
@@ -34,8 +34,8 @@
             android:id="@+id/offline_warning_fade"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:alpha="0.4"
-            android:background="@android:color/white">
+            android:alpha="0.8"
+            android:background="@color/muhitOfflineTransparent">
 
         </RelativeLayout>
 
@@ -44,38 +44,69 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:layout_margin="30dp"
-            android:background="@android:color/white">
+            android:layout_margin="24dp"
+            >
 
             <ImageView
                 android:id="@+id/imageView"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:layout_centerInParent="false"
-                android:layout_x="235dp"
-                android:layout_y="423dp"
                 android:elevation="10dp"
-                app:srcCompat="@drawable/splash_icon_512"
+                android:contentDescription="muhit.co broken glass"
+                app:srcCompat="@drawable/broken_glass"
                 tools:layout_editor_absoluteX="0dp"
                 tools:layout_editor_absoluteY="0dp"/>
 
-            <TextView
-                android:id="@+id/editText"
+            <co.muhit.CustomFontTextView
+                android:id="@+id/offline_line_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
                 android:layout_below="@+id/imageView"
-                android:layout_centerHorizontal="true"
-                android:gravity="center_horizontal"
                 android:layout_marginTop="20dp"
-                android:ems="10"
+                android:gravity="center_horizontal"
                 android:inputType="textMultiLine"
                 android:maxLines="5"
-                android:text="@string/offline_warning"
+                android:text="@string/offline_warning_line_1"
                 android:textAlignment="center"
-                android:textColor="@color/muhitSecondary"
-                android:textSize="24dp"/>
+                android:textColor="@android:color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:font="@string/font_name_source_sans_pro"/>
+
+            <co.muhit.CustomFontTextView
+                android:id="@+id/offline_line_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/offline_line_1"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="20dp"
+                android:gravity="center_horizontal"
+                android:inputType="textMultiLine"
+                android:maxLines="5"
+                android:text="@string/offline_warning_line_2"
+                android:textAlignment="center"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                app:font="@string/font_name_source_sans_pro"/>
+
+            <co.muhit.CustomFontButton
+                android:id="@+id/retryButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/offline_line_2"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="60dp"
+                android:allowUndo="false"
+                android:background="@drawable/offline_rounded_button"
+                android:padding="12dp"
+                android:text="@string/offline_retry_button"
+                android:textSize="24sp"
+                app:font="@string/font_name_source_sans_pro"/>
 
         </RelativeLayout>
 
