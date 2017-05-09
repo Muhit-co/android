@@ -2,6 +2,7 @@ package co.muhit;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
@@ -26,6 +27,8 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 /**
  * This Activity shows the website in a WebView.
@@ -66,27 +69,6 @@ public class WebActivityFullscreen extends AppCompatActivity {
      */
     private View mOfflineWarningView;
     /**
-     * The view that entirely covers the WebView to make it faded
-     */
-    private View mOfflineWarningFadeLayover;
-    /**
-     * The URL to the website shown in the WebView
-     */
-    private String mAppUrl;
-    /**
-     * The domain of the website shown in the WebView
-     */
-    private String mAppWebDomain;
-
-    private enum PageLoadingState {
-        Initial,
-        InProgress,
-        Failed,
-        Succeeded
-    }
-    private PageLoadingState mCurrentLoadingState = PageLoadingState.Initial;
-
-    /**
      * A receiver that triggers an offline warning when internet is lost
      */
     private final NetworkReceiver mConnectivityReceiver = new NetworkReceiver(this) {
@@ -100,6 +82,23 @@ public class WebActivityFullscreen extends AppCompatActivity {
             WebActivityFullscreen.this.showOfflineWarning();
         }
     };
+    /**
+     * The view that entirely covers the WebView to make it faded
+     */
+    private View mOfflineWarningFadeLayover;
+    /**
+     * The URL to the website shown in the WebView
+     */
+    private String mAppUrl;
+    /**
+     * The domain of the website shown in the WebView
+     */
+    private String mAppWebDomain;
+    private PageLoadingState mCurrentLoadingState = PageLoadingState.Initial;
+    /**
+     * The alpha of the offline warning. It's value will be taken from the initial layout value.
+     */
+    private float mInitialOfflineLayoverAlpha;
 
     /**
      * Method to update the view when the app is online again
@@ -122,11 +121,6 @@ public class WebActivityFullscreen extends AppCompatActivity {
             }
         }
     }
-
-    /**
-     * The alpha of the offline warning. It's value will be taken from the initial layout value.
-     */
-    private float mInitialOfflineLayoverAlpha;
 
     public void onBackPressed() {
         // Forward BACK presses to the WebView as long as there is navigation history
@@ -269,7 +263,7 @@ public class WebActivityFullscreen extends AppCompatActivity {
      * Handle loading of new URLs. When a target should be handled externally this function launches an Intent to do so
      *
      * @param host The host of which the request is to be handeled
-     * @param uri The target URI to load
+     * @param uri  The target URI to load
      * @return Whether a target should be loaded into this app's WebView (true) or externally (false)
      */
     private boolean handleRequest(String host, Uri uri) {
@@ -326,6 +320,18 @@ public class WebActivityFullscreen extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
+
+    private enum PageLoadingState {
+        Initial,
+        InProgress,
+        Failed,
+        Succeeded
     }
 
     /**
