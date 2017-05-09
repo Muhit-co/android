@@ -4,8 +4,8 @@
     <string name="web_url">http://muhit.co/</string>
     <string name="web_prefix">muhit.co</string>
     <string name="upload_images_msg">Resimleri seç</string>
-    <string name="offline_warning_line_1">muhit.co'ya şu anda ulaşilamadi…</string>
+    <string name="offline_warning_line_1">muhit.co\'ya şu anda ulaşilamadi…</string>
     <string name="offline_warning_line_2">Lüften internet bağlantinizi kontrol edip tekrar deneyin</string>
     <string name="offline_retry_button">TEKRAR DENE</string>
-    <string name="retry_still_offline">muhit.co'ya şu anda ulaşılamadı… Lütfen internet bağlantınızı kontrol edip tekrar deneyin…</string>
+    <string name="retry_still_offline">muhit.co\'ya şu anda ulaşılamadı… Lütfen internet bağlantınızı kontrol edip tekrar deneyin…</string>
 </resources>
